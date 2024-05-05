@@ -4,9 +4,6 @@
 ; to-do list:
 ; - TODO: make macro work when starting from main menu
 ; - TODO: make macro work when starting from pause menu
-; - TODO: support resolutions other than 1440p
-; - TODO: allow resetting file 2 or 3
-; - TODO: allow resetting challenge moons
 ;
 ; vim: expandtab:tabstop=4:shiftwidth=4
 
@@ -23,11 +20,16 @@
 ; see full list of keys here: https://www.autohotkey.com/docs/v1/KeyList.htm
 global ResetKeys := "^r"
 
+; which file to play (default: "1")
+;
+; allowed values: "1", "2", "3", "challenge"
+global SaveFile := "1"
+
 ; delay between macro actions (keyboard/mouse), in milliseconds (default: 30)
 global ActionDelay := 30
 
-; delay between quitting a lobby and using the main menu, in milliseconds (default: 200)
-global MainMenuDelay := 200
+; delay between quitting a lobby and using the main menu, in milliseconds (default: 350)
+global MainMenuDelay := 350
 
 ; text to copy to clipboard during each reset (default: "scan")
 ;
@@ -36,23 +38,58 @@ global MainMenuDelay := 200
 ; common values: "scan", "assurance", "vow"
 global ClipboardOnReset := "scan"
 
+; whether to narrate settings changes using text-to-speech (default: true)
+global TTS := true
+
+; script debug mode (default: false)
+global DebugMode := false
+
 ;;; (end of settings)
 
 
 
+Say(Message)
+{
+    global TTS
+    if (TTS) {
+        ComObjCreate("SAPI.SpVoice").Speak(Message)
+    }
+}
+
 ; returns button coordinates for:
 ; - dismissLanWarningX, dismissLanWarningY
-; - fileX, fileY with keys "1", "2", "3", "challenge"
+; - fileX, fileY with keys "file1", "file2", "file3", "challenge"
+; - playChallengeAgainX, playChallengeAgainY
+; - confirmHostX, confirmHostY
 GetButtonCoords(WinW, WinH)
 {
+    centerX := Floor(WinW / 2)
+    centerY := Floor(WinH / 2)
+
+    centerAreaW := WinW
+    centerAreaH := WinH
+    if (WinW > WinH * 2) {
+        ; height-constrained
+        centerAreaW := WinH * 2
+    } else {
+        ; width-constrained
+        centerAreaH := WinW / 2
+    }
+
+    fileYInterval := Floor(centerAreaH * 0.0883)
+
     coords := {fileY: {}}
-    coords.dismissLanWarningX := 1240  ; TODO
-    coords.dismissLanWarningY := 870  ; TODO
-    coords.fileX := 1985
-    coords.fileY["1"] := 610
-    coords.fileY["2"] := "TODO"
-    coords.fileY["3"] := "TODO"
-    coords.fileY["challenge"] := "TODO"
+    coords.dismissLanWarningX := centerX - Floor(0.0175 * centerAreaW)
+    coords.dismissLanWarningY := centerY + Floor(0.1158 * centerAreaH)
+    coords.fileX := centerX + Floor(0.28 * centerAreaW)
+    coords.fileY["file1"] := centerY - fileYInterval
+    coords.fileY["file2"] := centerY
+    coords.fileY["file3"] := centerY + fileYInterval
+    coords.fileY["challenge"] := centerY + fileYInterval + Floor(0.1 * centerAreaH)
+    coords.playChallengeAgainX := centerX + Floor(0.0733 * centerAreaW)
+    coords.playChallengeAgainY := centerY + Floor(0.37 * centerAreaH)
+    coords.confirmHostX := centerX - Floor(0.0054 * centerAreaW)
+    coords.confirmHostY := centerY + Floor(0.1008 * centerAreaH)
     return coords
 }
 
@@ -70,35 +107,73 @@ WinGetClientPos(ByRef X := "", ByRef Y := "", ByRef Width := "", ByRef Height :=
     Height := NumGet(&RECT, 12, "Int")
 }
 
-Reset() {
+; just for testing button coordinates
+TestCoords()
+{
+    TestDelay := 250
+
+    WinGetClientPos("", "", winW, winH, "A", "", "", "")
+    coords := GetButtonCoords(winW, winH)
+
+    CoordMode, Mouse, Client
+    MouseMove, % coords.dismissLanWarningX, % coords.dismissLanWarningY
+    Sleep, % TestDelay
+    MouseMove, % coords.fileX, % coords.fileY["file1"]
+    Sleep, % TestDelay
+    MouseMove, % coords.fileX, % coords.fileY["file2"]
+    Sleep, % TestDelay
+    MouseMove, % coords.fileX, % coords.fileY["file3"]
+    Sleep, % TestDelay
+    MouseMove, % coords.fileX, % coords.fileY["challenge"]
+}
+
+; left click at the given client coords
+LeftClick(X, Y)
+{
+    CoordMode, Mouse, Client
+    ; specify Left to avoid coords being misinterpreted as another option type
+    Click, % Format("{:i} {:i} Left", X, Y)
+}
+
+Reset()
+{
     WinGetClientPos("", "", winW, winH, "A", "", "", "")
     coords := GetButtonCoords(winW, winH)
 
     global ActionDelay
     SetKeyDelay, ActionDelay
 
-    CoordMode, Mouse, Client
-
     ; quit to main menu
     Send {Escape}{Down down}{Down up}{Down down}{Down up}{Down down}{Down up}{Enter}{Up down}{Up up}{Enter}
     Sleep, MainMenuDelay
 
     ; dismiss LAN mode warning
-    Click, % coords.dismissLanWarningX . " " . coords.dismissLanWarningY
+    LeftClick(coords.dismissLanWarningX, coords.dismissLanWarningY)
     Sleep, ActionDelay
 
     ; host lobby (making sure Host is selected, even if mouse hovers another)
     Send {Down down}{Down up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Enter}
     Sleep, ActionDelay
 
-    ; delete file 1
-    Click, % coords.fileX . " " . coords.fileY["1"]
-    Sleep, ActionDelay
-    Send {Right down}{Right up}{Enter}{Down down}{Down up}{Up down}{Up up}{Enter}
-    Sleep, ActionDelay
+    global SaveFile
+    if (SaveFile == "challenge") {
+        ; select challenge file and click play again
+        LeftClick(coords.fileX, coords.fileY["challenge"])
+        Sleep, ActionDelay
+        LeftClick(coords.playChallengeAgainX, coords.playChallengeAgainY)
+        Sleep, ActionDelay
+    } else {
+        ; delete and select chosen save file
+        LeftClick(coords.fileX, coords.fileY["file" . SaveFile])
+        Sleep, ActionDelay
+        Send {Right down}{Right up}{Enter}{Down down}{Down up}{Up down}{Up up}{Enter}
+        Sleep, ActionDelay
+        LeftClick(coords.fileX, coords.fileY["file" . SaveFile])
+        Sleep, ActionDelay
+    }
 
     ; confirm host lobby
-    Send {Down down}{Down up}{Up down}{Up up}{Enter}
+    LeftClick(coords.confirmHostX, coords.confirmHostY)
 
     ; copy 
     global ClipboardOnReset
@@ -107,5 +182,37 @@ Reset() {
     }
 }
 
+SetSaveFile(ItemName, ItemPos, MenuName)
+{
+    global SaveFile
+    SaveFile := Format("{:L}", ItemName)
+
+    Menu, Tray, Uncheck, 1
+    Menu, Tray, Uncheck, 2
+    Menu, Tray, Uncheck, 3
+    Menu, Tray, Uncheck, Challenge
+    Menu, Tray, Check, % ItemName
+
+    if (SaveFile == "challenge") {
+        Say("Challenge file")
+    } else {
+        Say("File " . SaveFile)
+    }
+}
+
+Menu, Tray, Add
+Menu, Tray, Add, Save File, SetSaveFile
+Menu, Tray, Add, 1, SetSaveFile, +Radio
+Menu, Tray, Add, 2, SetSaveFile, +Radio
+Menu, Tray, Add, 3, SetSaveFile, +Radio
+Menu, Tray, Add, Challenge, SetSaveFile, +Radio
+Menu, Tray, Disable, Save File
+Menu, Tray, Check, % SaveFile
+
 Hotkey, IfWinActive, Lethal Company ahk_class UnityWndClass
 Hotkey, % ResetKeys, Reset
+if (DebugMode) {
+    Hotkey, ^a, TestCoords
+}
+
+Say("Ready")
