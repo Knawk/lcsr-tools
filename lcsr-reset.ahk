@@ -1,6 +1,11 @@
 ; Lethal Company speedrun macros
 ; by Knawk
-; 
+;
+; to-do list:
+; - TODO: support resolutions other than 1440p
+; - TODO: allow resetting file 2 or 3
+; - TODO: allow resetting challenge moons
+;
 ; vim: expandtab:tabstop=4:shiftwidth=4
 
 #Persistent
