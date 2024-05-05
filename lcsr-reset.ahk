@@ -175,7 +175,7 @@ Reset()
     ; confirm host lobby
     LeftClick(coords.confirmHostX, coords.confirmHostY)
 
-    ; copy 
+    ; copy to clipboard
     global ClipboardOnReset
     if (ClipboardOnReset != "") {
         Clipboard := ClipboardOnReset
