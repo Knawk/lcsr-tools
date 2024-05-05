@@ -40,7 +40,40 @@ global ClipboardOnReset := "scan"
 
 
 
+; returns button coordinates for:
+; - dismissLanWarningX, dismissLanWarningY
+; - fileX, fileY with keys "1", "2", "3", "challenge"
+GetButtonCoords(WinW, WinH)
+{
+    coords := {fileY: {}}
+    coords.dismissLanWarningX := 1240  ; TODO
+    coords.dismissLanWarningY := 870  ; TODO
+    coords.fileX := 1985
+    coords.fileY["1"] := 610
+    coords.fileY["2"] := "TODO"
+    coords.fileY["3"] := "TODO"
+    coords.fileY["challenge"] := "TODO"
+    return coords
+}
+
+; from https://www.autohotkey.com/boards/viewtopic.php?p=197355#p197355
+WinGetClientPos(ByRef X := "", ByRef Y := "", ByRef Width := "", ByRef Height := "", WinTitle := "", WinText := "", ExcludeTitle := "", ExcludeText := "")
+{
+    local hWnd, RECT
+    hWnd := WinExist(WinTitle, WinText, ExcludeTitle, ExcludeText)
+    VarSetCapacity(RECT, 16, 0)
+    DllCall("user32\GetClientRect", Ptr, hWnd, Ptr, &RECT)
+    DllCall("user32\ClientToScreen", Ptr, hWnd, Ptr, &RECT)
+    X := NumGet(&RECT, 0, "Int")
+    Y := NumGet(&RECT, 4, "Int")
+    Width := NumGet(&RECT, 8, "Int")
+    Height := NumGet(&RECT, 12, "Int")
+}
+
 Reset() {
+    WinGetClientPos("", "", winW, winH, "A", "", "", "")
+    coords := GetButtonCoords(winW, winH)
+
     global ActionDelay
     SetKeyDelay, ActionDelay
 
@@ -51,7 +84,7 @@ Reset() {
     Sleep, MainMenuDelay
 
     ; dismiss LAN mode warning
-    Click, 1240 870
+    Click, % coords.dismissLanWarningX . " " . coords.dismissLanWarningY
     Sleep, ActionDelay
 
     ; host lobby (making sure Host is selected, even if mouse hovers another)
@@ -59,9 +92,9 @@ Reset() {
     Sleep, ActionDelay
 
     ; delete file 1
-    Click, 2237 609
+    Click, % coords.fileX . " " . coords.fileY["1"]
     Sleep, ActionDelay
-    Send {Down down}{Down up}{Up down}{Up up}{Enter}
+    Send {Right down}{Right up}{Enter}{Down down}{Down up}{Up down}{Up up}{Enter}
     Sleep, ActionDelay
 
     ; confirm host lobby
