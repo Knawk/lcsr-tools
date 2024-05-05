@@ -6,17 +6,30 @@
 #Persistent
 #NoEnv
 
+
+
 ;;; Settings
 
-global KeyDelay := 40
+; delay between macro actions (keyboard/mouse), in milliseconds (default: 30)
+global ActionDelay := 30
 
+; delay between quitting a lobby and using the main menu, in milliseconds (default: 200)
 global MainMenuDelay := 200
+
+; text to copy to clipboard during each reset (default: "scan")
+;
+; if empty (value ""), the clipboard won't be modified during resets.
+;
+; common values: "scan", "assurance", "vow"
+global ClipboardOnReset := "scan"
 
 ;;; (end of settings)
 
+
+
 Reset() {
-    global KeyDelay
-    SetKeyDelay, KeyDelay
+    global ActionDelay
+    SetKeyDelay, ActionDelay
 
     CoordMode, Mouse, Client
 
@@ -26,20 +39,26 @@ Reset() {
 
     ; dismiss LAN mode warning
     Click, 1240 870
-    Sleep, KeyDelay
+    Sleep, ActionDelay
 
     ; host lobby (making sure Host is selected, even if mouse hovers another)
     Send {Down down}{Down up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Enter}
-    Sleep, KeyDelay
+    Sleep, ActionDelay
 
     ; delete file 1
     Click, 2237 609
-    Sleep, KeyDelay
+    Sleep, ActionDelay
     Send {Down down}{Down up}{Up down}{Up up}{Enter}
-    Sleep, KeyDelay
+    Sleep, ActionDelay
 
     ; confirm host lobby
     Send {Down down}{Down up}{Up down}{Up up}{Enter}
+
+    ; copy 
+    global ClipboardOnReset
+    if (ClipboardOnReset != "") {
+        Clipboard := ClipboardOnReset
+    }
 }
 
 #If WinActive("Lethal Company ahk_class UnityWndClass")
