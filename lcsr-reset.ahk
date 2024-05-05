@@ -2,6 +2,8 @@
 ; by Knawk
 ;
 ; to-do list:
+; - TODO: make macro work when starting from main menu
+; - TODO: make macro work when starting from pause menu
 ; - TODO: support resolutions other than 1440p
 ; - TODO: allow resetting file 2 or 3
 ; - TODO: allow resetting challenge moons
@@ -14,6 +16,12 @@
 
 
 ;;; Settings
+
+; key(s) to trigger reset (default: "^r" = CTRL+r)
+;
+; see modifier keys (CTRL, SHIFT, ALT, etc.) here: https://www.autohotkey.com/docs/v1/Hotkeys.htm#Symbols
+; see full list of keys here: https://www.autohotkey.com/docs/v1/KeyList.htm
+global ResetKeys := "^r"
 
 ; delay between macro actions (keyboard/mouse), in milliseconds (default: 30)
 global ActionDelay := 30
@@ -66,16 +74,5 @@ Reset() {
     }
 }
 
-#If WinActive("Lethal Company ahk_class UnityWndClass")
-{
-
-+NumpadEnter:: ; Reset
-    Reset()
-return
-
-F6:: ; Reset
-    Reset()
-return
-
-}
-
+Hotkey, IfWinActive, Lethal Company ahk_class UnityWndClass
+Hotkey, % ResetKeys, Reset
