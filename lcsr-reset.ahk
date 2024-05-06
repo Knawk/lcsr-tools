@@ -1,8 +1,13 @@
-; Lethal Company speedrun macros
+; Lethal Company reset macro
 ; by Knawk
 ;
-; to-do list:
-; - TODO: make macro work when starting from pause menu
+; How to reset:
+;  1. start from either the main menu or in-game (but not the pause menu)
+;  2. press CTRL+R (configurable in the settings below)
+;
+; How to select the save file to reset:
+;  1. right-click the green square "H" icon in the system tray
+;  2. choose an option under "Save File"
 ;
 ; vim: expandtab:tabstop=4:shiftwidth=4
 
@@ -19,16 +24,12 @@
 ; see full list of keys here: https://www.autohotkey.com/docs/v1/KeyList.htm
 global ResetKeys := "^r"
 
-; which file to play (default: "1")
+; default file to play (default: "1")
+;
+; you can also select a different save file using the system tray menu
 ;
 ; allowed values: "1", "2", "3", "challenge"
 global SaveFile := "1"
-
-; delay between macro actions (keyboard/mouse), in milliseconds (default: 30)
-global ActionDelay := 30
-
-; delay between quitting a lobby and using the main menu, in milliseconds (default: 350)
-global MainMenuDelay := 350
 
 ; text to copy to clipboard during each reset (default: "scan")
 ;
@@ -36,6 +37,12 @@ global MainMenuDelay := 350
 ;
 ; common values: "scan", "assurance", "vow"
 global ClipboardOnReset := "scan"
+
+; delay between macro actions (keyboard/mouse), in milliseconds (default: 30)
+global ActionDelay := 30
+
+; delay between quitting a lobby and using the main menu, in milliseconds (default: 350)
+global MainMenuDelay := 350
 
 ; whether to narrate settings changes using text-to-speech (default: true)
 global TTS := true
@@ -56,6 +63,7 @@ Say(Message)
 }
 
 ; returns button coordinates for:
+; - exitCreditsX, exitCreditsY
 ; - dismissLanWarningX, dismissLanWarningY
 ; - hostX, hostY
 ; - fileX, fileY with keys "file1", "file2", "file3", "challenge"
@@ -66,6 +74,7 @@ GetButtonCoords(WinW, WinH)
     centerX := Floor(WinW / 2)
     centerY := Floor(WinH / 2)
 
+    ; compute dimensions of 2x1 "center area" relative to which many UI elements are positioned
     centerAreaW := WinW
     centerAreaH := WinH
     if (WinW > WinH * 2) {
