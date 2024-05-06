@@ -7,34 +7,35 @@
 ; Once AutoHotkey is installed, double-click/open this script to start it.
 ; A green square "H" icon will appear in the system tray / taskbar.
 ;
-; By default, pressing CTRL+R from in-game will:
-;  - exit to the main menu
-;  - delete Save File 1 and start a new lobby (on File 1)
-;  - copy "scan" to the clipboard (for easy bee scanning)
+; By default, pressing CTRL+R from in-game will reset by:
+;   - exiting to the main menu
+;   - deleting Save File 1 and starting a new lobby (on File 1)
+;   - copying "scan" to the clipboard (for easy bee scanning)
 ;
-; Then any time after loading into the lobby ("SYSTEMS ONLINE" fade-out), pressing CTRL+T will:
-;  - move your character to the terminal
-;  - access the terminal and route the ship to Assurance
-;  - quit the terminal
+; Then after loading into the lobby ("SYSTEMS ONLINE" fade-out), pressing ALT+R will set up the run by:
+;   - accessing the terminal and routing the ship to Assurance
+;   - facing towards the lever
+; (If this doesn't work, you may need to change the KEYBOARD/MOUSE SETTINGS below.)
 ;
 ; --- CONFIGURATION ---
 ;
 ; To route to a different moon:
-;  1. right-click the system tray icon
-;  2. select the "Starting Moon" item
-;  3. enter the moon name as you would in the terminal (like "march" or "mar" for March)
+;   1. right-click the system tray icon
+;   2. select the "Starting Moon" item
+;   3. enter the moon name as you would in the terminal (like "march" or "mar" for March)
 ;
 ; To select a different save file to reset:
-;  1. right-click the system tray icon
-;  2. select an option under "Save File"
+;   1. right-click the system tray icon
+;   2. select an option under "Save File"
 ;
-; See the Settings section below to configure:
-;  - the reset hotkey
-;  - the default save file
-;  - text to copy to the clipboard when resetting
-;  - macro action delays
-;  - ability to reset from the main menu
-; (and more)
+; See the SETTINGS sections below to configure:
+;   - the reset and setup-run keybinds
+;   - the default save file
+;   - text to copy to the clipboard when resetting
+;   - macro action delays
+;   - ability to reset from the main menu
+;   - (and more)
+; NOTE: After changing settings, select "Reload Script" from the system tray icon to reload them.
 ;
 ; vim: expandtab:tabstop=4:shiftwidth=4
 
@@ -43,51 +44,56 @@ Persistent
 
 
 
-;;; Settings
+; --- KEYBOARD/MOUSE SETTINGS ---
+;
+; NOTE: These settings use AutoHotkey's key names, like "a" for A, "+" for Shift, and "{Space}" for Space.
+; The modifier keys (CTRL, SHIFT, ALT) are listed here: https://www.autohotkey.com/docs/v2/Hotkeys.htm#Symbols
+; Letters/numbers and other keys are listed here: https://www.autohotkey.com/docs/v2/KeyList.htm
 
-; NOTE: If you change any settings,
-; you'll need to "Reload Script" from the system tray icon for them to take effect.
+; key bound to "Interact" in Lethal Company (default: "e")
+global GameInteractKey := "e"
+
+; key bound to "Walk forward" in Lethal Company (default: "w")
+global GameForwardKey := "w"
+
+; mouse/look sensitivity in Lethal Company (default: 1)
+;   - on the slider, the left side is 1, the middle gray bar is 10, and the right side is 20
+global GameLookSensitivity := 1
 
 ; key(s) to trigger reset (default: "^r" = CTRL+R)
-;
-; see modifier keys (CTRL, SHIFT, ALT, etc.) here: https://www.autohotkey.com/docs/v1/Hotkeys.htm#Symbols
-; see full list of keys here: https://www.autohotkey.com/docs/v1/KeyList.htm
 global ResetKeys := "^r"
 
-; key(s) to trigger start-of-run actions (default: "^t" = CTRL+T)
-;
-; see modifier keys (CTRL, SHIFT, ALT, etc.) here: https://www.autohotkey.com/docs/v1/Hotkeys.htm#Symbols
-; see full list of keys here: https://www.autohotkey.com/docs/v1/KeyList.htm
-global StartRunKeys := "^t"
+; key(s) to trigger setup run (default: "!r" = ALT+R)
+global SetupRunKeys := "!r"
+
+
+
+; --- MACRO SETTINGS ---
 
 ; default moon to route (default: "ass")
-;
-; common values: "ass", "vow"
-global StartRunMoon := "ass"
+;   - common values: "ass", "vow"
+global StartingMoon := "ass"
 
 ; default file to play (default: "1")
-;
-; you can also select a different save file using the system tray menu
-;
-; allowed values: "1", "2", "3", "challenge"
+;   - you can also select a different save file using the system tray menu
+;   - allowed values: "1", "2", "3", "challenge"
 global SaveFile := "1"
 
 ; text to copy to clipboard during each reset (default: "scan")
-;
-; if empty (value ""), the clipboard won't be modified during resets.
-;
-; common values: "scan", "assurance", "vow"
+;   - if empty (value ""), the clipboard won't be modified during resets
+;   - common values: "scan", "assurance", "vow"
 global ClipboardOnReset := "scan"
 
-; delay between macro actions (keyboard/mouse), in milliseconds (default: 30)
-global ActionDelay := 30
+; delay between macro actions (keyboard/mouse), in milliseconds (default: 40)
+;   - if inputs are being missed, you may need to increase this
+global ActionDelay := 40
 
 ; delay between quitting a lobby and using the main menu, in milliseconds (default: 300)
+;   - if main menu inputs are being missed, you may need to increase this
 global MainMenuDelay := 300
 
 ; whether to enable resetting on main menu (default: false)
-;
-; (this will slow down resets a little, so it's disabled by default)
+;  - this will slow down resets a little, so it's disabled by default
 global CanResetFromMainMenu := false
 
 ; whether to narrate settings changes using text-to-speech (default: true)
@@ -96,7 +102,9 @@ global TTS := true
 ; script debug mode (default: false)
 global DebugMode := false
 
-;;; (end of settings)
+
+
+; --- END OF SETTINGS ---
 
 
 
@@ -104,6 +112,10 @@ global DebugMode := false
 SendMode "Event"
 CoordMode "Mouse", "Client"
 SetDefaultMouseSpeed 0
+
+; prevent ALT/WIN hotkeys from also causing CTRL events,
+; which is crouch by default (and can't be configured on some versions like v40)
+A_MenuMaskKey := "vkFF"
 
 Say(Message)
 {
@@ -201,6 +213,20 @@ LeftClick(X, Y)
     Click Format("{:i} {:i} Left", X, Y)
 }
 
+; turn the camera by Yaw degrees right and Pitch degrees down
+CameraTurnRelative(Yaw, Pitch)
+{
+    prevSendMode := A_SendMode
+
+    SendMode "Play"
+    sens := Float(GameLookSensitivity)
+    x := Round(125.0 * Float(Yaw) / sens)
+    y := Round(125.0 * Float(Pitch) / sens)
+    DllCall "mouse_event", "UInt", 0x01, "UInt", x, "UInt", y
+
+    SendMode prevSendMode
+}
+
 Reset(*)
 {
     WinGetClientPos(, , &winW, &winH, "A", , ,)
@@ -261,36 +287,46 @@ Reset(*)
     }
 }
 
-StartRun(*)
+SetupRun(*)
 {
     SetupKeyDelays()
 
-    Send "{Shift down}{a down}"
-    endTime := A_TickCount + 1500
+    ; turn torwards terminal
+    CameraTurnRelative(-56.0, 0.0)
+    Sleep ActionDelay
+
+    ; walk to and access terminal
+    Send "{w down}"
+    endTime := A_TickCount + 500
     ; set a bound to make sure there's no possibility of infinitely looping
-    Loop 40 {
+    Loop 15 {
         Send "e"
         Sleep 33
         if (A_TickCount >= endTime) {
             break
         }
     }
+    Send "{w up}"
 
-    Send "{Shift up}{a up}"
-    Sleep 150
-    Send StartRunMoon . "{Enter}"
+    ; enter terminal commands and quit terminal
+    Sleep 650
+    Send StartingMoon . "{Enter}"
     Sleep 250
     Send "c{Enter}{Escape}"
+    Sleep 400
+
+    ; turns towards lever
+    CameraTurnRelative(-100.0, 19.0)
 }
 
-SetStartRunMoon(ItemName, *)
+SetStartingMoon(ItemName, *)
 {
-    global StartRunMoon
+    global StartingMoon
 
-    ib := InputBox("Enter starting moon:", "Set Starting Moon", "", StartRunMoon)
+    ib := InputBox("Enter starting moon:", "Set Starting Moon", "", StartingMoon)
     if (ib.Result == "OK") {
-        StartRunMoon := ib.Value
-        A_TrayMenu.Rename(ItemName, "Starting Moon: " . StartRunMoon)
+        StartingMoon := ib.Value
+        A_TrayMenu.Rename(ItemName, "Starting Moon: " . StartingMoon)
         Say("Moon changed")
     }
 }
@@ -314,7 +350,7 @@ SetSaveFile(ItemName, *)
 }
 
 A_TrayMenu.Add()
-A_TrayMenu.Add("Starting Moon: " . StartRunMoon, SetStartRunMoon)
+A_TrayMenu.Add("Starting Moon: " . StartingMoon, SetStartingMoon)
 
 A_TrayMenu.Add()
 A_TrayMenu.Add("Save File", SetSaveFile)
@@ -327,7 +363,7 @@ A_TrayMenu.Check(SaveFile)
 
 HotIfWinActive "Lethal Company ahk_class UnityWndClass"
 Hotkey ResetKeys, Reset
-Hotkey StartRunKeys, StartRun
+Hotkey SetupRunKeys, SetupRun
 if (DebugMode) {
     Hotkey "^a" TestCoords
 }
