@@ -2,7 +2,6 @@
 ; by Knawk
 ;
 ; to-do list:
-; - TODO: make macro work when starting from main menu
 ; - TODO: make macro work when starting from pause menu
 ;
 ; vim: expandtab:tabstop=4:shiftwidth=4
@@ -58,6 +57,7 @@ Say(Message)
 
 ; returns button coordinates for:
 ; - dismissLanWarningX, dismissLanWarningY
+; - hostX, hostY
 ; - fileX, fileY with keys "file1", "file2", "file3", "challenge"
 ; - playChallengeAgainX, playChallengeAgainY
 ; - confirmHostX, confirmHostY
@@ -76,20 +76,27 @@ GetButtonCoords(WinW, WinH)
         centerAreaH := WinW / 2
     }
 
-    fileYInterval := Floor(centerAreaH * 0.0883)
-
     coords := {fileY: {}}
+
+    coords.exitCreditsX := centerX - Floor(0.0054 * centerAreaW)
+    coords.exitCreditsY := centerY + Floor(0.4550 * centerAreaH)
+
     coords.dismissLanWarningX := centerX - Floor(0.0175 * centerAreaW)
     coords.dismissLanWarningY := centerY + Floor(0.1158 * centerAreaH)
+
     coords.fileX := centerX + Floor(0.28 * centerAreaW)
+    fileYInterval := Floor(centerAreaH * 0.0883)
     coords.fileY["file1"] := centerY - fileYInterval
     coords.fileY["file2"] := centerY
     coords.fileY["file3"] := centerY + fileYInterval
     coords.fileY["challenge"] := centerY + fileYInterval + Floor(0.1 * centerAreaH)
+
     coords.playChallengeAgainX := centerX + Floor(0.0733 * centerAreaW)
-    coords.playChallengeAgainY := centerY + Floor(0.37 * centerAreaH)
+    coords.playChallengeAgainY := centerY + Floor(0.3700 * centerAreaH)
+
     coords.confirmHostX := centerX - Floor(0.0054 * centerAreaW)
     coords.confirmHostY := centerY + Floor(0.1008 * centerAreaH)
+
     return coords
 }
 
@@ -110,12 +117,15 @@ WinGetClientPos(ByRef X := "", ByRef Y := "", ByRef Width := "", ByRef Height :=
 ; just for testing button coordinates
 TestCoords()
 {
-    TestDelay := 250
+    TestDelay := 200
 
     WinGetClientPos("", "", winW, winH, "A", "", "", "")
     coords := GetButtonCoords(winW, winH)
 
     CoordMode, Mouse, Client
+
+    MouseMove, % coords.exitCreditsX, % coords.exitCreditsY
+    Sleep, % TestDelay
     MouseMove, % coords.dismissLanWarningX, % coords.dismissLanWarningY
     Sleep, % TestDelay
     MouseMove, % coords.fileX, % coords.fileY["file1"]
@@ -125,6 +135,10 @@ TestCoords()
     MouseMove, % coords.fileX, % coords.fileY["file3"]
     Sleep, % TestDelay
     MouseMove, % coords.fileX, % coords.fileY["challenge"]
+    Sleep, % TestDelay
+    MouseMove, % coords.playChallengeAgainX, % coords.playChallengeAgainY
+    Sleep, % TestDelay
+    MouseMove, % coords.confirmHostX, % coords.confirmHostY
 }
 
 ; left click at the given client coords
@@ -143,16 +157,24 @@ Reset()
     global ActionDelay
     SetKeyDelay, ActionDelay
 
-    ; quit to main menu
+    ; pause and quit to main menu
+    ; (using keys since pause menu positioning is weird)
     Send {Escape}{Down down}{Down up}{Down down}{Down up}{Down down}{Down up}{Enter}{Up down}{Up up}{Enter}
     Sleep, MainMenuDelay
+
+    ; exit credits and move focus to Host button
+    ; (in case Reset started on main menu, and opened credits above)
+    LeftClick(coords.exitCreditsX, coords.exitCreditsY)
+    Send {Up down}{Up up}{Up down}{Up up}{Up down}{Up up}
+    Sleep, ActionDelay
 
     ; dismiss LAN mode warning
     LeftClick(coords.dismissLanWarningX, coords.dismissLanWarningY)
     Sleep, ActionDelay
 
-    ; host lobby (making sure Host is selected, even if mouse hovers another)
-    Send {Down down}{Down up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Up down}{Up up}{Enter}
+    ; host lobby
+    ; (using keys since main menu positioning is weird)
+    Send {Enter}
     Sleep, ActionDelay
 
     global SaveFile
@@ -173,6 +195,7 @@ Reset()
     }
 
     ; confirm host lobby
+    ; (can't use keyboard after selecting challenge, so just always use mouse)
     LeftClick(coords.confirmHostX, coords.confirmHostY)
 
     ; copy to clipboard
