@@ -145,6 +145,8 @@ TestCoords()
 LeftClick(X, Y)
 {
     CoordMode, Mouse, Client
+    SetDefaultMouseSpeed, 0
+
     ; specify Left to avoid coords being misinterpreted as another option type
     Click, % Format("{:i} {:i} Left", X, Y)
 }
@@ -155,17 +157,19 @@ Reset()
     coords := GetButtonCoords(winW, winH)
 
     global ActionDelay
-    SetKeyDelay, ActionDelay
+    ; needs nonzero delay for some reason
+    pressDuration := Max(5, Floor(ActionDelay / 2) + 1)
+    SetKeyDelay, ActionDelay, % pressDuration
 
     ; pause and quit to main menu
     ; (using keys since pause menu positioning is weird)
-    Send {Escape}{Down down}{Down up}{Down down}{Down up}{Down down}{Down up}{Enter}{Up down}{Up up}{Enter}
+    Send {Escape}{Down 3}{Enter}{Up}{Enter}
     Sleep, MainMenuDelay
 
     ; exit credits and move focus to Host button
     ; (in case Reset started on main menu, and opened credits above)
     LeftClick(coords.exitCreditsX, coords.exitCreditsY)
-    Send {Up down}{Up up}{Up down}{Up up}{Up down}{Up up}
+    Send {Up 3}
     Sleep, ActionDelay
 
     ; dismiss LAN mode warning
@@ -188,7 +192,7 @@ Reset()
         ; delete and select chosen save file
         LeftClick(coords.fileX, coords.fileY["file" . SaveFile])
         Sleep, ActionDelay
-        Send {Right down}{Right up}{Enter}{Down down}{Down up}{Up down}{Up up}{Enter}
+        Send {Right}{Enter}{Down}{Up}{Enter}
         Sleep, ActionDelay
         LeftClick(coords.fileX, coords.fileY["file" . SaveFile])
         Sleep, ActionDelay
