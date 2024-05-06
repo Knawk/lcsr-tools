@@ -1,15 +1,26 @@
 ; Lethal Company reset macro
 ; by Knawk
 ;
-; Requires AutoHotkey v2.0+ (https://www.autohotkey.com/)
+; Requires AutoHotkey v2.0+ (https://www.autohotkey.com/).
+; Once AutoHotkey is installed, double-click/open this script to start it.
+; A green square "H" icon will appear in the system tray / taskbar.
 ;
-; How to reset:
-;  1. start from in-game (not the pause menu)
-;  2. press CTRL+R (configurable in the Settings section below)
+; By default, pressing the CTRL+R from in-game will:
+;  - exit to the main menu
+;  - delete Save File 1 and start a new lobby (on File 1)
+;  - copy "scan" to the clipboard (for easy bee scanning)
 ;
-; How to select the save file to reset:
-;  1. right-click the green square "H" icon in the system tray
-;  2. choose an option under "Save File"
+; To select a different save file to reset:
+;  1. right-click the system tray icon
+;  2. select an option under "Save File"
+;
+; See the Settings section below to configure:
+;  - the reset hotkey
+;  - the default save file
+;  - text to copy to the clipboard when resetting
+;  - macro action delays
+;  - ability to reset from the main menu
+; (and more)
 ;
 ; vim: expandtab:tabstop=4:shiftwidth=4
 
@@ -19,6 +30,9 @@ Persistent
 
 
 ;;; Settings
+
+; NOTE: If you change any settings,
+; you'll need to "Reload Script" from the system tray icon for them to take effect.
 
 ; key(s) to trigger reset (default: "^r" = CTRL+r)
 ;
